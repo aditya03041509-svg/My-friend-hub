@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Friends Hub 🔒</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0f172a; color: #f8fafc; padding: 20px; }
+
+        /* Login Overlay Styling */
+        #loginOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .login-card {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 90%;
+            max-width: 350px;
+            border: 1px solid #334155;
+        }
+        .login-card h2 { color: #38bdf8; margin-bottom: 10px; }
+        .login-card input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #fff;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        .login-card button {
+            width: 100%;
+            padding: 12px;
+            background: #0284c7;
+            border: none;
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .login-card button:hover { background: #0369a1; }
+        .error-msg { color: #ef4444; font-size: 0.85rem; display: none; margin-top: 10px; }
+
+        /* Main App Container */
+        .container { max-width: 1000px; margin: 0 auto; display: none; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { color: #38bdf8; }
+        .logout-btn { background: #ef4444; border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+
+        .form-card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 25px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        input, select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #fff; }
+        .save-btn { grid-column: span 1; padding: 12px; background: #0284c7; border: none; color: white; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+        .friends-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .friend-card { background: #1e293b; padding: 18px; border-radius: 12px; border-left: 5px solid #38bdf8; position: relative; }
+        .friend-card h3 { color: #38bdf8; margin-bottom: 5px; }
+        .friend-card .badge { display: inline-block; background: #334155; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; margin-bottom: 10px; }
+        .delete-btn { position: absolute; top: 15px; right: 15px; background: #ef4444; border: none; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <!-- 🔒 LOGIN OVERLAY -->
+    <div id="loginOverlay">
+        <div class="login-card">
+            <h2>🔑 Owner Access</h2>
+            <p style="color: #94a3b8; font-size: 0.9rem;">Enter passcode to view friends list</p>
+            <input type="password" id="passcodeInput" placeholder="Enter Password" autofocus>
+            <button onclick="checkPassword()">Unlock Hub</button>
+            <p id="errorMsg" class="error-msg">Incorrect Password! Try again.</p>
+        </div>
+    </div>
+
+    <!-- 👥 MAIN CONTENT -->
+    <div class="container" id="mainApp">
+        <div class="header">
+            <h1>👥 Friends Memory Hub</h1>
+            <button class="logout-btn" onclick="logout()">Lock App 🔒</button>
+        </div>
+
+        <div class="form-card">
+            <h3 style="margin-bottom: 15px;">✨ Add New Friend</h3>
+            <form id="friendForm" class="form-grid">
+                <input type="text" id="name" placeholder="Friend Name *" required>
+                <input type="text" id="nickname" placeholder="Nickname">
+                <select id="category">
+                    <option value="Bestie">Bestie 💖</option>
+                    <option value="School Friend">School Friend 🏫</option>
+                    <option value="College Buddy">College Buddy 🎓</option>
+                    <option value="Work/Gym">Work / Gym 🏋️</option>
+                </select>
+                <input type="date" id="bday">
+                <input type="text" id="phone" placeholder="Phone Number">
+                <input type="text" id="insta" placeholder="Instagram ID">
+                <input type="text" id="fav" placeholder="Favorite Food/Gift">
+                <input type="text" id="memory" placeholder="Best Memory Together">
+                <button type="submit" class="save-btn" style="grid-column: 1 / -1;">Save Friend's Details 💾</button>
+            </form>
+        </div>
+
+        <div class="friends-grid" id="friendsList"></div>
+    </div>
+
+    <script>
+        // 🔑 CHANGE YOUR PASSWORD HERE:
+        const SECRET_PASSCODE = "1234";
+
+        function checkPassword() {
+            const input = document.getElementById('passcodeInput').value;
+            if (input === SECRET_PASSCODE) {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                showApp();
+            } else {
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+
+        function showApp() {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            renderFriends();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('isLoggedIn');
+            location.reload();
+        }
+
+        // Auto Login if session active
+        if (sessionStorage.getItem('isLoggedIn') === 'true') {
+            showApp();
+        }
+
+        // App Logic
+        const form = document.getElementById('friendForm');
+        const friendsList = document.getElementById('friendsList');
+        let friends = JSON.parse(localStorage.getItem('my_friends_data')) || [];
+
+        function renderFriends() {
+            friendsList.innerHTML = '';
+            if (friends.length === 0) {
+                friendsList.innerHTML = '<p style="color: #64748b;">No friends added yet.</p>';
+                return;
+            }
+            friends.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'friend-card';
+                card.innerHTML = `
+                    <button class="delete-btn" onclick="deleteFriend(${index})">❌</button>
+                    <h3>${item.name} ${item.nickname ? `(${item.nickname})` : ''}</h3>
+                    <span class="badge">${item.category}</span>
+                    <p style="margin-top: 5px;">🎂 <b>B'day:</b> ${item.bday || 'N/A'}</p>
+                    <p>📞 <b>Phone:</b> ${item.phone || 'N/A'}</p>
+                    <p>📸 <b>Insta:</b> ${item.insta || 'N/A'}</p>
+                    <p>🍕 <b>Likes:</b> ${item.fav || 'N/A'}</p>
+                    <p>💭 <b>Memory:</b> ${item.memory || 'N/A'}</p>
+                `;
+                friendsList.appendChild(card);
+            });
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newFriend = {
+                name: document.getElementById('name').value,
+                nickname: document.getElementById('nickname').value,
+                category: document.getElementById('category').value,
+                bday: document.getElementById('bday').value,
+                phone: document.getElementById('phone').value,
+                insta: document.getElementById('insta').value,
+                fav: document.getElementById('fav').value,
+                memory: document.getElementById('memory').value,
+            };
+            friends.push(newFriend);
+            localStorage.setItem('my_friends_data', JSON.stringify(friends));
+            renderFriends();
+            form.reset();
+        });
+
+        function deleteFriend(index) {
+            if (confirm("Delete this friend?")) {
+                friends.splice(index, 1);
+                localStorage.setItem('my_friends_data', JSON.stringify(friends));
+                renderFriends();
+            }
+        }
+    </script>
+</body>
+</html>
